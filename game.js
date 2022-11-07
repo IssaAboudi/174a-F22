@@ -15,7 +15,7 @@ const Game_Controls = defs.Game_Controls =
         constructor() {
             super();
             const data_members = {
-                thrust: new Vector(0, 0), pos: new Vector(0, 0),
+                thrust: new Vector(0, 0), pos: vec3(0, 0, 0), z_axis: vec3(0, 0, 0),
                 radians_per_frame: 1 / 200, meters_per_frame: 10, speed_multiplier: 1
             };
             Object.assign(this, data_members);
@@ -66,17 +66,20 @@ export class BrickBreaker extends Scene {
         // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
         super();
 
-	this.shapes = {
-		sphere: new defs.Subdivision_Sphere(4),
-		circle: new defs.Regular_2D_Polygon(1, 15)
-	}
-	
-	this.materials = {
-		default: new Material(new defs.Phong_Shader(),
-            {ambient: .4, diffusivity: .6, color: hex_color("#ffffff")})
-    }
+        this.shapes = {
+            sphere: new defs.Subdivision_Sphere(4),
+            circle: new defs.Regular_2D_Polygon(1, 15)
+        }
+
+        this.materials = {
+            default: new Material(new defs.Phong_Shader(),
+                {ambient: .4, diffusivity: .6, color: hex_color("#ffffff")})
+        }
+
+        this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
 
     }
+
 
     make_control_panel() {
         this.control_panel.innerHTML += " Description of Game goes here.<br>";
@@ -94,10 +97,12 @@ export class BrickBreaker extends Scene {
         const ts = program_state.animation_time / 1000; //time step (for each second of animation)
         const dt = program_state.animation_delta_time / 1000; //time difference between current and last frame (keep game frame independent)
 
-    	//add code here
+        //add code here
+        program_state.lights = [new Light(vec4(0, 5, 5, 1), color(1, 1, 1, 1), 10)]; //Default Light
+
         let ball_transform = Mat4.identity();
 
-        this.shapes.circle.draw(context, program_state, ball_transform, this.materials.default);
+        this.shapes.sphere.draw(context, program_state, ball_transform, this.materials.default);
     }
 
 
