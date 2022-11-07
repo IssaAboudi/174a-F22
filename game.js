@@ -1,8 +1,78 @@
 import {defs, tiny} from './examples/common.js';
 
+// Modified tiny-graphics-widgets.js common.js
+// to clean up game webpage (disabled code block widget, file structure widget,
+// and basic movement controls set by default - we will create our own movement controls
+// called "Game_Controls")
+
 const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene,
 } = tiny;
+
+const Game_Controls = defs.Game_Controls =
+    class Game_Controls extends Scene {
+
+        constructor() {
+            super();
+            const data_members = {
+                thrust: vec2(0, 0), pos: vec2(0, 0),
+                radians_per_frame: 1 / 200, meters_per_frame: 10, speed_multiplier: 1
+            };
+            Object.assign(this, data_members);
+
+            this.mouse_enabled_canvases = new Set();
+            this.will_take_over_graphics_state = true;
+        }
+
+        set_recipient(matrix_closure, inverse_closure) {
+            // set_recipient(): The camera matrix is not actually stored here inside Movement_Controls;
+            // instead, track an external target matrix to modify.  Targets must be pointer references
+            // made using closures.
+            this.matrix = matrix_closure;
+            this.inverse = inverse_closure;
+        }
+
+        reset(graphics_state) {
+            // reset(): Initially, the default target is the camera matrix that Shaders use, stored in the
+            // encountered program_state object.  Targets must be pointer references made using closures.
+            this.set_recipient(() => graphics_state.camera_transform,
+                () => graphics_state.camera_inverse);
+        }
+
+        make_control_panel() {
+            //Make all the buttons for in the control panel here:
+
+            // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
+            this.key_triggered_button("Sample Button", ["A"], () => this.attached = () => null);
+            this.new_line();
+
+        }
+
+        display(context, graphics_state, dt = graphics_state.animation_delta_time / 1000) {
+            // The whole process of acting upon controls begins here.
+            const m = this.speed_multiplier * this.meters_per_frame,
+                r = this.speed_multiplier * this.radians_per_frame;
+
+            if (this.will_take_over_graphics_state) {
+                this.reset(graphics_state);
+                this.will_take_over_graphics_state = false;
+            }
+
+            if (!this.mouse_enabled_canvases.has(context.canvas)) {
+                this.add_mouse_controls(context.canvas);
+                this.mouse_enabled_canvases.add(context.canvas)
+            }
+            // Move in first-person.  Scale the normal camera aiming speed by dt for smoothness:
+            this.first_person_flyaround(dt * r, dt * m);
+            // Also apply third-person "arcball" camera mode if a mouse drag is occurring:
+            if (this.mouse.anchor)
+                this.third_person_arcball(dt * r);
+            // Log some values:
+            this.pos = this.inverse().times(vec4(0, 0, 0, 1));
+            this.z_axis = this.inverse().times(vec4(0, 0, 1, 0));
+
+        }
+    }
 
 export class BrickBreaker extends Scene {
     constructor() {
@@ -22,16 +92,14 @@ export class BrickBreaker extends Scene {
     }
 
     make_control_panel() {
-        // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
-        this.key_triggered_button("button", ["Control", "0"], () => this.attached = () => null);
-        this.new_line();
+        this.control_panel.innerHTML += " Description of Game goes here.<br>";
     }
 
     display(context, program_state) {
         // display():  Called once per frame of animation.
         // Setup -- This part sets up the scene's overall camera matrix, projection matrix, and lights:
         if (!context.scratchpad.controls) {
-            this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
+            this.children.push(context.scratchpad.controls = new defs.Game_Controls());
             // Define the global camera and projection matrices, which are stored in program_state.
             program_state.set_camera(this.initial_camera_location);
         }
@@ -47,6 +115,10 @@ export class BrickBreaker extends Scene {
 
 
 }
+
+
+
+
 
 class Gouraud_Shader extends Shader {
     // This is a Shader using Phong_Shader as template

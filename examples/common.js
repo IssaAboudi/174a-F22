@@ -1,5 +1,6 @@
 import {tiny} from '../tiny-graphics.js';
 import {widgets} from '../tiny-graphics-widgets.js';
+
 // Pull these names into this module's scope for convenience:
 const {
     Vector, Vector3, vec, vec3, vec4, color, Matrix, Mat4,
@@ -463,7 +464,6 @@ const Minimal_Webgl_Demo = defs.Minimal_Webgl_Demo =
         }
 
         display(context, graphics_state) {
-            // Every frame, simply draw the Triangle at its default location.
             this.shapes.triangle.draw(context, graphics_state, Mat4.identity(), new Material(this.shader));
         }
     }
@@ -841,6 +841,7 @@ const Movement_Controls = defs.Movement_Controls =
         }
 
         add_mouse_controls(canvas) {
+
             // add_mouse_controls():  Attach HTML mouse events to the drawing canvas.
             // First, measure mouse steering, for rotating the flyaround camera:
             this.mouse = {"from_center": vec(0, 0)};
@@ -1000,6 +1001,7 @@ const Movement_Controls = defs.Movement_Controls =
             // Log some values:
             this.pos = this.inverse().times(vec4(0, 0, 0, 1));
             this.z_axis = this.inverse().times(vec4(0, 0, 1, 0));
+
         }
     }
 
@@ -1010,11 +1012,11 @@ const Program_State_Viewer = defs.Program_State_Viewer =
         // global values via its control panel.
         make_control_panel() {
             // display() of this scene will replace the following object:
-            this.program_state = {};
-            this.key_triggered_button("(Un)pause animation", ["Alt", "a"], () => this.program_state.animate ^= 1);
+            // this.program_state = {};
+            // this.key_triggered_button("(Un)pause animation", ["Alt", "a"], () => this.program_state.animate ^= 1);
         }
 
         display(context, program_state) {
-            this.program_state = program_state;
+            // this.program_state = program_state;
         }
     }

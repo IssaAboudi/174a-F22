@@ -256,6 +256,7 @@ const Code_Widget = widgets.Code_Widget =
 
         build_reader(element, main_scene, additional_scenes, definitions) {
             // (Internal helper function)
+            /* TODO: (Issa Change - Clean up game page)
             this.definitions = definitions;
             const code_panel = element.appendChild(document.createElement("div"));
             code_panel.className = "code-panel";
@@ -265,10 +266,12 @@ const Code_Widget = widgets.Code_Widget =
             this.code_display.className = "code-display";
             // Default textbox contents:
             this.display_code(main_scene);
+             */
         }
 
         build_navigator(element, main_scene, additional_scenes, definitions) {
             // (Internal helper function)
+            /* (Issa Change - Clean up game page)
             const class_list = element.appendChild(document.createElement("table"));
             class_list.className = "class-list";
             const top_cell = class_list.insertRow(-1).insertCell(-1);
@@ -311,6 +314,7 @@ const Code_Widget = widgets.Code_Widget =
                     cell.appendChild(document.createTextNode(" "));
                 }
             }
+            */
         }
 
         display_code(class_to_display) {
