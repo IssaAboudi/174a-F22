@@ -15,9 +15,10 @@ export class BrickBreaker extends Scene {
 	}
 	
 	this.materials = {
-		test: new Material(new defs.Phong_Shader(),
-                {ambient: .4, diffusivity: .6, color: hex_color("#ffffff")})
-	}
+		default: new Material(new defs.Phong_Shader(),
+            {ambient: .4, diffusivity: .6, color: hex_color("#ffffff")})
+    }
+
     }
 
     make_control_panel() {
@@ -34,11 +35,20 @@ export class BrickBreaker extends Scene {
             // Define the global camera and projection matrices, which are stored in program_state.
             program_state.set_camera(this.initial_camera_location);
         }
-    
+
+        const ts = program_state.animation_time / 1000; //time step (for each second of animation)
+        const dt = program_state.animation_delta_time / 1000; //time difference between current and last frame (keep game frame independent)
+
     	//add code here
+        let ball_transform = Mat4.identity();
+
+        this.shapes.circle.draw(context, program_state, ball_transform, this.materials.default);
     }
 
-    class Gouraud_Shader extends Shader {
+
+}
+
+class Gouraud_Shader extends Shader {
     // This is a Shader using Phong_Shader as template
 
     constructor(num_lights = 2) {
