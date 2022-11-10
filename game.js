@@ -95,6 +95,10 @@ class Axis extends Shape {
   }
 }
 
+let paddle_move = 0;
+const howMuchMove = 5;
+
+
 const Game_Controls = (defs.Game_Controls = class Game_Controls extends Scene {
   constructor() {
     super();
@@ -135,13 +139,17 @@ const Game_Controls = (defs.Game_Controls = class Game_Controls extends Scene {
 
     // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
     this.key_triggered_button("Move Paddle Left", ["a"], () => {
-      global_transform = vec3(5,0,0),
+      if(paddle_move >= -6*howMuchMove) { //constrains movement on left side
+        paddle_move += -howMuchMove;
         console.log("a pressed")
-    }, undefined, () => { global_transform = vec3(0,0,0) } );
+      }
+    }, undefined, () => { paddle_move += 0 } );
     this.key_triggered_button("Move Paddle Right", ["d"], () => {
-      global_transform = vec3(-5,0,0),
-          console.log("d pressed")
-    }, undefined, () => { global_transform = vec3(0,0,0) } );
+      if (paddle_move <= 6 * howMuchMove){ //constrains movement on right side
+        paddle_move += +howMuchMove;
+        console.log("d pressed")
+      }
+    }, undefined, () => { paddle_move += 0 } );
     this.new_line();
   }
 
@@ -157,7 +165,8 @@ const Game_Controls = (defs.Game_Controls = class Game_Controls extends Scene {
   }
 });
 
-let global_transform = vec3(0,0,0);
+
+
 
 export class BrickBreaker extends Scene {
   constructor() {
@@ -182,8 +191,8 @@ export class BrickBreaker extends Scene {
 
     this.white = new Material(new defs.Basic_Shader());
 
-    let eye_position = vec3(30,20,60); //Initialize Camera to
-    let eye_look_at = vec3(30,20,0); //Set camera to look at the middle of the game window
+    let eye_position = vec3(31,20,60); //Initialize Camera to
+    let eye_look_at = vec3(31,20,0); //Set camera to look at the middle of the game window
 
     this.initial_camera_location = Mat4.look_at(eye_position, eye_look_at, vec3(0, 1, 0));
 
@@ -246,12 +255,14 @@ export class BrickBreaker extends Scene {
     // Draw paddle (centered it, but use variables to keep it always centered depending on grid pramaeters)
     // (use a deformed sphere so that the ball goes off at different angles)
       // ~ Changes 11/10/2022 by Issa: Changed name from plate_transform to paddle_transform (more descriptive)
+    let paddle_start_pos = (1 * 6.2) + (4 * 6.4) //aka 30.6 (constant operation)
+
     let paddle_transform = Mat4.identity(); //this is redundant
-    paddle_transform = paddle_transform.times(Mat4.translation(1 * 6.2 + 4 * 6.4, 0, 0))
+    paddle_transform = paddle_transform.times(Mat4.translation(paddle_start_pos, 0, 0))
+        .times(Mat4.translation(paddle_move, 0, 0)) //handles movement with a and d keys (movement amount per press is found at "howMuchMove")
         .times(Mat4.scale(6.2, 2, 1))
-        .times(paddle_transform)
-        .times(Mat4.translation(global_transform));
     ;
+
     this.shapes.sphere.draw(context, program_state, paddle_transform, this.materials.plastic);
 
     // Draw ball
