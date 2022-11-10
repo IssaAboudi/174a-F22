@@ -9,6 +9,27 @@ const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene,
 } = tiny;
 
+class Cube extends Shape {
+    constructor() {
+        super("position", "normal",);
+        // Loop 3 times (for each axis), and inside loop twice (for opposing cube sides):
+        this.arrays.position = Vector3.cast(
+            [-1, -1, -1], [1, -1, -1], [-1, -1, 1], [1, -1, 1],
+            [1, 1, -1], [-1, 1, -1], [1, 1, 1], [-1, 1, 1],
+            [-1, -1, -1], [-1, -1, 1], [-1, 1, -1], [-1, 1, 1],
+            [1, -1, 1], [1, -1, -1], [1, 1, 1], [1, 1, -1],
+            [-1, -1, 1], [1, -1, 1], [-1, 1, 1], [1, 1, 1],
+            [1, -1, -1], [-1, -1, -1], [1, 1, -1], [-1, 1, -1]);
+        this.arrays.normal = Vector3.cast(
+            [0, -1, 0], [0, -1, 0], [0, -1, 0], [0, -1, 0], [0, 1, 0], [0, 1, 0], [0, 1, 0], [0, 1, 0],
+            [-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [1, 0, 0], [1, 0, 0], [1, 0, 0], [1, 0, 0],
+            [0, 0, 1], [0, 0, 1], [0, 0, 1], [0, 0, 1], [0, 0, -1], [0, 0, -1], [0, 0, -1], [0, 0, -1]);
+        // Arrange the vertices into a square shape in texture space too:
+        this.indices.push(0, 1, 2, 1, 3, 2, 4, 5, 6, 5, 7, 6, 8, 9, 10, 9, 11, 10, 12, 13,
+            14, 13, 15, 14, 16, 17, 18, 17, 19, 18, 20, 21, 22, 21, 23, 22);
+    }
+}
+
 const Game_Controls = defs.Game_Controls =
     class Game_Controls extends Scene {
 
@@ -68,7 +89,8 @@ export class BrickBreaker extends Scene {
 
         this.shapes = {
             sphere: new defs.Subdivision_Sphere(4),
-            circle: new defs.Regular_2D_Polygon(1, 15)
+            circle: new defs.Regular_2D_Polygon(1, 15),
+            bricks: new Cube()
         }
 
         this.materials = {
@@ -94,6 +116,9 @@ export class BrickBreaker extends Scene {
             program_state.set_camera(this.initial_camera_location);
         }
 
+        program_state.projection_transform = Mat4.perspective(
+            Math.PI / 4, context.width / context.height, .1, 1000);
+
         const ts = program_state.animation_time / 1000; //time step (for each second of animation)
         const dt = program_state.animation_delta_time / 1000; //time difference between current and last frame (keep game frame independent)
 
@@ -101,8 +126,9 @@ export class BrickBreaker extends Scene {
         program_state.lights = [new Light(vec4(0, 5, 5, 1), color(1, 1, 1, 1), 10)]; //Default Light
 
         let ball_transform = Mat4.identity();
+        ball_transform = ball_transform.times(Mat4.scale(5,5,5));
 
-        this.shapes.sphere.draw(context, program_state, ball_transform, this.materials.default);
+        this.shapes.sphere.draw(context, program_state, ball_transform, this.materials.default.override({color: hex_color("#fac91a")}));
     }
 
 
