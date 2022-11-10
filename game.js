@@ -134,8 +134,14 @@ const Game_Controls = (defs.Game_Controls = class Game_Controls extends Scene {
     //Make all the buttons for in the control panel here:
 
     // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
-    this.key_triggered_button("Move Paddle Left", ["a"], () => global_transform.add(Mat4.translation(5,0,0)),   undefined, () => global_transform.add(Mat4.translation(-5,0,0)));
-    this.key_triggered_button("Move Paddle Right", ["d"], () => global_transform.add(Mat4.translation(-5,0,0)), undefined, () => global_transform.add(Mat4.translation(5,0,0)));
+    this.key_triggered_button("Move Paddle Left", ["a"], () => {
+      global_transform = vec3(5,0,0),
+        console.log("a pressed")
+    }, undefined, () => { global_transform = vec3(0,0,0) } );
+    this.key_triggered_button("Move Paddle Right", ["d"], () => {
+      global_transform = vec3(-5,0,0),
+          console.log("d pressed")
+    }, undefined, () => { global_transform = vec3(0,0,0) } );
     this.new_line();
   }
 
@@ -151,7 +157,7 @@ const Game_Controls = (defs.Game_Controls = class Game_Controls extends Scene {
   }
 });
 
-let global_transform = new Mat4(5,0,0);
+let global_transform = vec3(0,0,0);
 
 export class BrickBreaker extends Scene {
   constructor() {
@@ -241,25 +247,11 @@ export class BrickBreaker extends Scene {
     // (use a deformed sphere so that the ball goes off at different angles)
       // ~ Changes 11/10/2022 by Issa: Changed name from plate_transform to paddle_transform (more descriptive)
     let paddle_transform = Mat4.identity(); //this is redundant
-    paddle_transform = paddle_transform.times(Mat4.translation(1 * 6.2 + 4 * 6.4, 0, 0)
-        .times(Mat4.scale(6.2, 2, 1)
-        .times(paddle_transform)))
+    paddle_transform = paddle_transform.times(Mat4.translation(1 * 6.2 + 4 * 6.4, 0, 0))
+        .times(Mat4.scale(6.2, 2, 1))
+        .times(paddle_transform)
+        .times(Mat4.translation(global_transform));
     ;
-
-    // document.addEventListener("Onkeydown", function(event){
-    //   if(event.target == a.keyCode){
-    //     console.log("a was pressed");
-    //     paddle_transform = paddle_transform.add(Mat4.translation(5,0,0));
-    //   }
-    // });
-    //
-    // document.addEventListener("Onkeydown", function(event) {
-    //   if(event.target == d.keyCode){
-    //     console.log("d was pressed");
-    //     paddle_transform = paddle_transform.add(Mat4.translation(-5,0,0));
-    //   }
-    // });
-
     this.shapes.sphere.draw(context, program_state, paddle_transform, this.materials.plastic);
 
     // Draw ball
