@@ -212,7 +212,11 @@ export class BrickBreaker extends Scene {
   }
 
   make_control_panel() {
-    this.control_panel.innerHTML += " Description of Game goes here.<br>";
+    this.control_panel.innerHTML += " <h2> Bruin Brick Breaker is a recreation of an old atari game known as \"Breakout\". </h2>";
+    this.control_panel.innerHTML += " <h2>The objective of the game is simple! Simply use the paddles to bounce the ball " +
+        "and destroy all the bricks in the level. </h2> <br>";
+    this.control_panel.innerHTML += " <h2> If the ball falls below where the paddle is, you lose a life. </h2> <br>";
+    this.control_panel.innerHTML += " <br> <h2> You only have 3 lives! Good luck! </h2> <br>";
   }
 
   display(context, program_state) {
