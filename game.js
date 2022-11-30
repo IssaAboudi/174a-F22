@@ -8,9 +8,49 @@ import { defs, tiny } from "./examples/common.js";
 
 const { Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene } = tiny;
 
+//Color corresponds to health level
+// - created here for convenience
+const blue = "1303fc"; // Health 5
+const green = "00c91b"; // Health 4
+const yellow = "fff308"; // Health 3
+const orange = "ffa500"; // Health 2
+const red = "ff0000"; // Health 1
+
+//Game Design Settings
+// - these are for making the game feel good
+let paddle_move = 0;
+const howMuchMove = 5; //how many units the paddle moves left and right each press
+const max_range = 30; //maximum range of motion left or right from the center
+
+
+function getLevelColor(health){
+  switch(health){
+    case 5:
+      console.log("blue");
+      return hex_color(blue);
+    case 4:
+      console.log("green");
+      return hex_color(green);
+    case 3:
+      console.log("yellow");
+      return hex_color(yellow);
+    case 2:
+      console.log("orange");
+      return hex_color(orange);
+    case 1:
+      console.log("red");
+      return hex_color(red);
+    default:
+      console.log("Error: Invalid health");
+  }
+}
+
 class Cube extends Shape {
   constructor() {
     super("position", "normal");
+
+
+
     // Loop 3 times (for each axis), and inside loop twice (for opposing cube sides):
     this.arrays.position = Vector3.cast(
       [-1, -1, -1],
@@ -71,6 +111,28 @@ class Cube extends Shape {
   }
 }
 
+class Brick extends Cube {
+  constructor(health = 5, color = hex_color(blue)) {
+    super("position", "normal");
+    //health of brick is initialized to 5
+    // - when health reaches 0, we destroy the brick
+    this.health = health;
+    //color is initialized to white
+    // - color of brick will correspond with health
+    this.color = color;
+
+    //add transform component:
+    this.brick_transform = Mat4.identity();
+    this.brick_transform = this.brick_transform
+        .times(Mat4.scale(3, 1, 1))
+        .times(Mat4.translation(3, 0, 0))
+    ;
+  }
+  getTransform(){
+    return this.brick_transform;
+  }
+}
+
 // // Example B: Define lines
 class Axis extends Shape {
   constructor() {
@@ -94,9 +156,6 @@ class Axis extends Shape {
     this.indices = false; // not necessary
   }
 }
-
-let paddle_move = 0;
-const howMuchMove = 5;
 
 
 const Game_Controls = (defs.Game_Controls = class Game_Controls extends Scene {
@@ -137,19 +196,20 @@ const Game_Controls = (defs.Game_Controls = class Game_Controls extends Scene {
   make_control_panel() {
     //Make all the buttons for in the control panel here:
 
-    // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
+    //Handle Left and Right Inputs
     this.key_triggered_button("Move Paddle Left", ["a"], () => {
-      if(paddle_move >= -6*howMuchMove) { //constrains movement on left side
+      if(paddle_move >= -max_range) { //constrains movement on left side
         paddle_move += -howMuchMove;
         console.log("a pressed")
       }
     }, undefined, () => { paddle_move += 0 } );
     this.key_triggered_button("Move Paddle Right", ["d"], () => {
-      if (paddle_move <= 6 * howMuchMove){ //constrains movement on right side
+      if (paddle_move <= max_range){ //constrains movement on right side
         paddle_move += +howMuchMove;
         console.log("d pressed")
       }
     }, undefined, () => { paddle_move += 0 } );
+
     this.new_line();
   }
 
@@ -166,8 +226,6 @@ const Game_Controls = (defs.Game_Controls = class Game_Controls extends Scene {
 });
 
 
-
-
 export class BrickBreaker extends Scene {
   constructor() {
     // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
@@ -176,7 +234,7 @@ export class BrickBreaker extends Scene {
     this.shapes = {
       sphere: new defs.Subdivision_Sphere(4),
       circle: new defs.Regular_2D_Polygon(1, 15),
-      bricks: new Cube(),
+      bricks: new Brick(),
       axis: new Axis(),
     };
 
@@ -196,19 +254,32 @@ export class BrickBreaker extends Scene {
 
     this.initial_camera_location = Mat4.look_at(eye_position, eye_look_at, vec3(0, 1, 0));
 
-    this.colors = [];
-    this.set_colors();
+    this.grid = [];
+    this.create_level(); //initialize grid at beginning of game
   }
 
-  set_colors() {
+  create_level() {
 
+    //level is created completely randomely
 
-    this.colors = [];
+    const space_margin = 2.2; //amount of spacing between each brick
+
     for (let i = 0; i < 10; i++) {
-      for (let j = 0; j < 10; j++) {
-        this.colors.push(color(Math.random(), Math.random(), Math.random(), 1));
+      for(let j = 0; j < 10; j++) {
+
+        let health = Math.random() * 5;
+        health = health | 1; //eliminate decimals - make health an integer
+        let color = getLevelColor(health);
+
+        let tempBrick = new Brick(health, color);
+        tempBrick.brick_transform = tempBrick.brick_transform
+            .times(Mat4.translation(-2.6,17,14)) //hardcoded positions for the grid
+            .times(Mat4.translation(space_margin * j, space_margin * i, 0))
+        ;
+        this.grid.push(tempBrick);
       }
     }
+
   }
 
   make_control_panel() {
@@ -238,22 +309,9 @@ export class BrickBreaker extends Scene {
 
     program_state.lights = [new Light(vec4(0, 0, 20, 1), color(1, 1, 1, 1), 10 ** 10),]; //Default Lighting for project
 
-    // let axis_model_transform = Mat4.identity();
-    // this.shapes.axis.draw(context, program_state, axis_model_transform, this.white, "LINES");
-
-    let movement_factor = 2; //how much we translate the paddle when we press the key
-
-    let brick_transform = Mat4.translation(0, 20, 0);
-    brick_transform = Mat4.translation(3, 0, 0)
-        .times(Mat4.scale(3, 1, 1).times(brick_transform))
-        ;
-
     // Draw Cube Grid 10x 10 (use function to set size this is temp)
-    for (let i = 0; i < 10; i++) {
-      for (let j = 0; j < 10; j++) {
-        this.shapes.bricks.draw(context, program_state, Mat4.translation(6.4 * j, 2.4 * i, 0).times(brick_transform),
-            this.materials.plastic.override({ color: this.colors[i + i * j] }));
-      }
+    for(let i = 0; i < 100; i++){
+        this.shapes.bricks.draw(context, program_state, this.grid[i].brick_transform, this.materials.plastic.override({color: this.grid[i].color}));
     }
 
     // Draw paddle (centered it, but use variables to keep it always centered depending on grid pramaeters)
@@ -261,7 +319,7 @@ export class BrickBreaker extends Scene {
       // ~ Changes 11/10/2022 by Issa: Changed name from plate_transform to paddle_transform (more descriptive)
     let paddle_start_pos = (1 * 6.2) + (4 * 6.4) //aka 30.6 (constant operation)
 
-    let paddle_transform = Mat4.identity(); //this is redundant
+    let paddle_transform = Mat4.identity();
     paddle_transform = paddle_transform.times(Mat4.translation(paddle_start_pos, 0, 0))
         .times(Mat4.translation(paddle_move, 0, 0)) //handles movement with a and d keys (movement amount per press is found at "howMuchMove")
         .times(Mat4.scale(6.2, 2, 1))
