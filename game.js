@@ -1,4 +1,4 @@
-import {defs, Subdivision_Sphere, tiny} from "./examples/common.js";
+import { defs, Subdivision_Sphere, tiny } from "./examples/common.js";
 // import { Keyboard_Manager } from "./tiny-graphics.js";
 
 // Modified tiny-graphics-widgets.js common.js
@@ -6,7 +6,22 @@ import {defs, Subdivision_Sphere, tiny} from "./examples/common.js";
 // and basic movement controls set by default - we will create our own movement controls
 // called "Game_Controls")
 
-const { Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene } = tiny;
+const {
+  Vector,
+  Vector3,
+  vec,
+  vec3,
+  vec4,
+  color,
+  hex_color,
+  Shader,
+  Matrix,
+  Mat4,
+  Light,
+  Shape,
+  Material,
+  Scene,
+} = tiny;
 
 //Color corresponds to health level
 // - created here for convenience
@@ -16,41 +31,46 @@ const yellow = "fff308"; // Health 3
 const orange = "ffa500"; // Health 2
 const red = "ff0000"; // Health 1
 
+// Variable to say ball is till, and second variable to say ball
+// is currently moving
+let launch = false;
+let ball_angle = Math.PI / 2;
+let moving = false;
+// let ball_time = 0;
+let speed_factor = 0.1;
+
 //Game Design Settings
 // - these are for making the game feel good
 let paddle_move = 0;
 const howMuchMove = 5; //how many units the paddle moves left and right each press
 const max_range = 30; //maximum range of motion left or right from the center
 
-
-function getHealthColor(health){
+function getHealthColor(health) {
   //return color corresponding to health value of brick
-  switch(health){
+  switch (health) {
     case 5:
-      console.log("blue");
+      // console.log("blue");
       return hex_color(blue);
     case 4:
-      console.log("green");
+      // console.log("green");
       return hex_color(green);
     case 3:
-      console.log("yellow");
+      // console.log("yellow");
       return hex_color(yellow);
     case 2:
-      console.log("orange");
+      // console.log("orange");
       return hex_color(orange);
     case 1:
-      console.log("red");
+      // console.log("red");
       return hex_color(red);
     default:
-      console.log("Error: Invalid health");
+    // console.log("Error: Invalid health");
   }
 }
 
 class Cube extends Shape {
   constructor() {
     super("position", "normal");
-
-
 
     // Loop 3 times (for each axis), and inside loop twice (for opposing cube sides):
     this.arrays.position = Vector3.cast(
@@ -106,9 +126,44 @@ class Cube extends Shape {
       [0, 0, -1]
     );
     // Arrange the vertices into a square shape in texture space too:
-    this.indices.push( 0, 1, 2, 1, 3, 2, 4, 5, 6, 5, 7, 6,
-                       8, 9, 10, 9, 11, 10, 12, 13, 14, 13, 15, 14,
-                       16, 17, 18, 17, 19, 18, 20, 21, 22, 21, 23, 22);
+    this.indices.push(
+      0,
+      1,
+      2,
+      1,
+      3,
+      2,
+      4,
+      5,
+      6,
+      5,
+      7,
+      6,
+      8,
+      9,
+      10,
+      9,
+      11,
+      10,
+      12,
+      13,
+      14,
+      13,
+      15,
+      14,
+      16,
+      17,
+      18,
+      17,
+      19,
+      18,
+      20,
+      21,
+      22,
+      21,
+      23,
+      22
+    );
   }
 }
 
@@ -125,30 +180,34 @@ class Brick extends Cube {
     //add transform component:
     this.brick_transform = Mat4.identity();
     this.brick_transform = this.brick_transform
-        .times(Mat4.scale(3, 1, 1))
-        .times(Mat4.translation(3, 0, 0))
-    ;
+      .times(Mat4.scale(3, 1, 1))
+      .times(Mat4.translation(3, 0, 0));
   }
-  getTransform(){
+  getTransform() {
     return this.brick_transform;
   }
 }
 
-class Ball extends Subdivision_Sphere{
+class Ball extends Subdivision_Sphere {
   constructor() {
     super(4);
 
-    this.ball_velocity = new Vector(0,0);
+    this.ball_velocity = new Vector(0, 0);
 
     this.radius = 1;
 
     //add transform component
     this.ball_transform = Mat4.identity();
-    this.ball_transform = this.ball_transform
-        .times(Mat4.translation(1 * 6.2 + 4 * 6.4, 1 + 4, 14))
-    ;
+    //Initially placing ball on pad
+    this.ball_transform = this.ball_transform.times(
+      Mat4.translation(1 * 6.2 + 4 * 6.4, 1 + 4, 14)
+    );
 
-    this.ball_position = new Vector3(this.ball_transform[0][3], this.ball_transform[1][3], this.ball_transform[2][3] );
+    this.ball_position = new Vector3(
+      this.ball_transform[0][3],
+      this.ball_transform[1][3],
+      this.ball_transform[2][3]
+    );
   }
 }
 
@@ -175,7 +234,6 @@ class Axis extends Shape {
     this.indices = false; // not necessary
   }
 }
-
 
 const Game_Controls = (defs.Game_Controls = class Game_Controls extends Scene {
   constructor() {
@@ -214,25 +272,49 @@ const Game_Controls = (defs.Game_Controls = class Game_Controls extends Scene {
 
   make_control_panel() {
     //Make all the buttons for in the control panel here:
-
+    this.key_triggered_button("Launch Ball", ["s"], () => {
+      launch = !launch;
+    });
     //Handle Left and Right Inputs
-    this.key_triggered_button("Move Paddle Left", ["a"], () => {
-      if(paddle_move >= -max_range) { //constrains movement on left side
-        paddle_move += -howMuchMove;
-        console.log("a pressed")
+    this.key_triggered_button(
+      "Move Paddle Left",
+      ["a"],
+      () => {
+        if (paddle_move >= -max_range) {
+          //constrains movement on left side
+          paddle_move += -howMuchMove;
+          // console.log("a pressed");
+        }
+      },
+      undefined,
+      () => {
+        paddle_move += 0;
       }
-    }, undefined, () => { paddle_move += 0 } );
-    this.key_triggered_button("Move Paddle Right", ["d"], () => {
-      if (paddle_move <= max_range){ //constrains movement on right side
-        paddle_move += +howMuchMove;
-        console.log("d pressed")
+    );
+    this.key_triggered_button(
+      "Move Paddle Right",
+      ["d"],
+      () => {
+        if (paddle_move <= max_range) {
+          //constrains movement on right side
+          paddle_move += +howMuchMove;
+          // console.log("d pressed");
+        }
+      },
+      undefined,
+      () => {
+        paddle_move += 0;
       }
-    }, undefined, () => { paddle_move += 0 } );
+    );
 
     this.new_line();
   }
 
-  display(context, graphics_state, dt = graphics_state.animation_delta_time / 1000) {
+  display(
+    context,
+    graphics_state,
+    dt = graphics_state.animation_delta_time / 1000
+  ) {
     // The whole process of acting upon controls begins here.
     const m = this.speed_multiplier * this.meters_per_frame,
       r = this.speed_multiplier * this.radians_per_frame;
@@ -243,7 +325,6 @@ const Game_Controls = (defs.Game_Controls = class Game_Controls extends Scene {
     }
   }
 });
-
 
 export class BrickBreaker extends Scene {
   constructor() {
@@ -260,19 +341,28 @@ export class BrickBreaker extends Scene {
 
     this.materials = {
       default: new Material(new defs.Phong_Shader(), {
-          ambient: 0.4, diffusivity: 0.6, color: hex_color("#ffffff"),
+        ambient: 0.4,
+        diffusivity: 0.6,
+        color: hex_color("#ffffff"),
       }),
       plastic: new Material(new defs.Phong_Shader(), {
-          ambient: 1, diffusivity: 1, specularity: 1, color: hex_color("#b08040"),
+        ambient: 1,
+        diffusivity: 1,
+        specularity: 1,
+        color: hex_color("#b08040"),
       }),
     };
 
     this.white = new Material(new defs.Basic_Shader());
 
-    let eye_position = vec3(31,20,60); //Initialize Camera to
-    let eye_look_at = vec3(31,20,0); //Set camera to look at the middle of the game window
+    let eye_position = vec3(31, 20, 60); //Initialize Camera to
+    let eye_look_at = vec3(31, 20, 0); //Set camera to look at the middle of the game window
 
-    this.initial_camera_location = Mat4.look_at(eye_position, eye_look_at, vec3(0, 1, 0));
+    this.initial_camera_location = Mat4.look_at(
+      eye_position,
+      eye_look_at,
+      vec3(0, 1, 0)
+    );
 
     this.grid = [];
     // Initialize the grid at the beginning of the game
@@ -281,17 +371,17 @@ export class BrickBreaker extends Scene {
 
     //How to form custom level:
     let level = [
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
-        [2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
-        [3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
-        [3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
-        [4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
-        [4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
-        [5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
-        [5, 5, 5, 5, 5, 5, 5, 5, 5, 5]
-    ]
+      [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+      [2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+      [2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+      [3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+      [3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+      [4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+      [4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+      [5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+      [5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+    ];
     this.create_custom_level(level);
   }
 
@@ -300,98 +390,150 @@ export class BrickBreaker extends Scene {
     const space_margin = 2.2; //amount of spacing between each brick
 
     for (let i = 0; i < 10; i++) {
-      for(let j = 0; j < 10; j++) {
-
+      for (let j = 0; j < 10; j++) {
         let health = Math.random() * 5;
         health = health | 1; //eliminate decimals - make health an integer
         let color = getHealthColor(health);
 
         let tempBrick = new Brick(health, color);
         tempBrick.brick_transform = tempBrick.brick_transform
-            .times(Mat4.translation(-2.6,17,14)) //hardcoded positions for the grid
-            .times(Mat4.translation(space_margin * j, space_margin * i, 0))
-        ;
+          .times(Mat4.translation(-2.6, 17, 14)) //hardcoded positions for the grid
+          .times(Mat4.translation(space_margin * j, space_margin * i, 0));
         this.grid.push(tempBrick);
       }
     }
   }
 
-  create_custom_level(level){ //Supply a 2D array for the custom level layout
+  create_custom_level(level) {
+    //Supply a 2D array for the custom level layout
     const space_margin = 2.2; //amount of spacing between each brick
     for (let i = 0; i < 10; i++) {
-      for(let j = 0; j < 10; j++) {
-
+      for (let j = 0; j < 10; j++) {
         let health = level[i][j];
         // health = health | 1; //eliminate decimals - make health an integer
         let color = getHealthColor(health);
 
         let tempBrick = new Brick(health, color);
         tempBrick.brick_transform = tempBrick.brick_transform
-            .times(Mat4.translation(-2.6,17,14)) //hardcoded positions for the grid
-            .times(Mat4.translation(space_margin * j, space_margin * i, 0))
-        ;
+          .times(Mat4.translation(-2.6, 17, 14)) //hardcoded positions for the grid
+          .times(Mat4.translation(space_margin * j, space_margin * i, 0));
         this.grid.push(tempBrick);
       }
     }
   }
 
   make_control_panel() {
-    this.control_panel.innerHTML += " <h2> Bruin Brick Breaker is a recreation of an old atari game known as \"Breakout\". </h2>";
-    this.control_panel.innerHTML += " <h2>The objective of the game is simple! Simply use the paddles to bounce the ball " +
-        "and destroy all the bricks in the level. </h2> <br>";
-    this.control_panel.innerHTML += " <h2> If the ball falls below where the paddle is, you lose a life. </h2> <br>";
-    this.control_panel.innerHTML += " <br> <h2> You only have 3 lives! Good luck! </h2> <br>";
+    this.control_panel.innerHTML +=
+      ' <h2> Bruin Brick Breaker is a recreation of an old atari game known as "Breakout". </h2>';
+    this.control_panel.innerHTML +=
+      " <h2>The objective of the game is simple! Simply use the paddles to bounce the ball " +
+      "and destroy all the bricks in the level. </h2> <br>";
+    this.control_panel.innerHTML +=
+      " <h2> If the ball falls below where the paddle is, you lose a life. </h2> <br>";
+    this.control_panel.innerHTML +=
+      " <br> <h2> You only have 3 lives! Good luck! </h2> <br>";
   }
 
   display(context, program_state) {
     // display():  Called once per frame of animation.
     // Setup -- This part sets up the scene's overall camera matrix, projection matrix, and lights:
     if (!context.scratchpad.controls) {
-      this.children.push((context.scratchpad.controls = new defs.Game_Controls()));
+      this.children.push(
+        (context.scratchpad.controls = new defs.Game_Controls())
+      );
       // this.children.push((context.scratchpad.controls = new defs.Movement_Controls())); //Don't need this because camera is fixed
 
       // Define the global camera and projection matrices, which are stored in program_state.
       program_state.set_camera(this.initial_camera_location);
     }
 
-    program_state.projection_transform = Mat4.perspective(Math.PI / 4, context.width / context.height, 0.1, 1000);
+    program_state.projection_transform = Mat4.perspective(
+      Math.PI / 4,
+      context.width / context.height,
+      0.1,
+      1000
+    );
 
     const ts = program_state.animation_time / 1000; //time step (for each second of animation)
     const dt = program_state.animation_delta_time / 1000; //time difference between current and last frame (keep game frame independent)
 
-
-    program_state.lights = [new Light(vec4(0, 0, 20, 1), color(1, 1, 1, 1), 10 ** 10),]; //Default Lighting for project
+    program_state.lights = [
+      new Light(vec4(0, 0, 20, 1), color(1, 1, 1, 1), 10 ** 10),
+    ]; //Default Lighting for project
 
     // Draw Cube Grid 10 x 10 (use function to set size this is temp)
-    for(let i = 0; i < 100; i++){
-        this.shapes.bricks.draw(context, program_state, this.grid[i].brick_transform, this.materials.plastic.override({color: this.grid[i].color}));
+    for (let i = 0; i < 100; i++) {
+      this.shapes.bricks.draw(
+        context,
+        program_state,
+        this.grid[i].brick_transform,
+        this.materials.plastic.override({ color: this.grid[i].color })
+      );
     }
 
     // Draw paddle (centered it, but use variables to keep it always centered depending on grid pramaeters)
     // (use a deformed sphere so that the ball goes off at different angles)
-      // ~ Changes 11/10/2022 by Issa: Changed name from plate_transform to paddle_transform (more descriptive)
-      // ~ Changes 11/30/2022 by Issa: Changed name from paddle_start_pos to paddle_start_Xpos (more specific)
-      //                             - Started paddle Z at 14 to match bricks and ball pos
-      //                             - Changed dimensions of paddle to be thinner on y and moved it up on y
-    let paddle_start_Xpos = (1 * 6.2) + (4 * 6.4) //aka 30.6 (constant operation)
+    // ~ Changes 11/10/2022 by Issa: Changed name from plate_transform to paddle_transform (more descriptive)
+    // ~ Changes 11/30/2022 by Issa: Changed name from paddle_start_pos to paddle_start_Xpos (more specific)
+    //                             - Started paddle Z at 14 to match bricks and ball pos
+    //                             - Changed dimensions of paddle to be thinner on y and moved it up on y
+    let paddle_start_Xpos = 1 * 6.2 + 4 * 6.4; //aka 30.6 (constant operation)
 
     let paddle_transform = Mat4.identity();
     paddle_transform = paddle_transform
-        .times(Mat4.translation(paddle_start_Xpos, 3, 14)) //
-        .times(Mat4.translation(paddle_move, 0, 0)) //handles movement with a and d keys (movement amount per press is found at "howMuchMove")
-        .times(Mat4.scale(6.2, 1, 1))
-    ;
+      .times(Mat4.translation(paddle_start_Xpos, 3, 14)) //
+      .times(Mat4.translation(paddle_move, 0, 0)) //handles movement with a and d keys (movement amount per press is found at "howMuchMove")
+      .times(Mat4.scale(6.2, 1, 1));
 
-    this.shapes.sphere.draw(context, program_state, paddle_transform, this.materials.plastic);
-
+    this.shapes.sphere.draw(
+      context,
+      program_state,
+      paddle_transform,
+      this.materials.plastic
+    );
 
     // Draw ball
     let ball = new Ball();
-    console.log(ball.ball_transform);
-    console.log("x component at [0, 3] = " + ball.ball_transform[0][3]);
-    console.log("y component at [1, 3] = " + ball.ball_transform[1][3]);
-    console.log("z component at [2, 3] = " + ball.ball_transform[2][3]);
-    this.shapes.ball.draw(context, program_state, ball.ball_transform, this.materials.default);
+    // console.log(ball.ball_transform);
+    // console.log("x component at [0, 3] = " + ball.ball_transform[0][3]);
+    // console.log("y component at [1, 3] = " + ball.ball_transform[1][3]);
+    // console.log("z component at [2, 3] = " + ball.ball_transform[2][3]);
+
+    // initial game situation
+    if (launch == false && moving == false) {
+      // this.shapes.ball = new Ball();
+      this.shapes.ball.draw(
+        context,
+        program_state,
+        ball.ball_transform,
+        this.materials.default
+      );
+    }
+    // if user clicked launch while ball was moving go back to same spot
+    else if (launch == false && moving == true) {
+      this.shapes.ball = new Ball();
+      moving = false;
+    }
+    // *START* moving the ball (launch is true here)
+    else if (launch == true && moving == false) {
+      moving = true;
+      // launch at random angle between pi/4 and 3pi/4
+      ball_angle = Math.PI / 4 + Math.random() * (Math.PI / 2);
+    } else {
+      // move ball at ball angle
+      // on collision update velocity vector and translation matrix
+      this.shapes.ball.ball_transform = Mat4.translation(
+        -Math.cos(ball_angle) * speed_factor,
+        Math.sin(ball_angle) * speed_factor,
+        0
+      ).times(this.shapes.ball.ball_transform);
+      this.shapes.ball.draw(
+        context,
+        program_state,
+        this.shapes.ball.ball_transform,
+        this.materials.default
+      );
+    }
   }
 }
 
