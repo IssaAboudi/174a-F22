@@ -205,11 +205,13 @@ class Brick extends Cube {
   //   ];
   // }
 
+  // returns true if brick died
   checkCollision(ball) {
     let brick_center = this.getCenter();
     let ball_center = ball.getCenter();
     let x_diff = Math.abs(ball_center[0] - brick_center[0]);
     let y_diff = Math.abs(ball_center[1] - brick_center[1]);
+    let collision = false;
     // console.log(center);
     // console.log(x_diff);
     // console.log(y_diff);
@@ -218,11 +220,28 @@ class Brick extends Cube {
     // center of sphere is within R + height of square/2
     if (
       x_diff <= this.hwidth && //within left and right of brick
-      y_diff <= ball.radius + this.hheight && //above top or bottom border of brick
-      ball_center[1] < brick_center[1] //the ball is below the brick
+      y_diff <= ball.radius + this.hheight //above top or bottom border of brick
+      // ball_center[1] < brick_center[1] //the ball is below the brick not necessary
     ) {
       ball_angle = 2 * Math.PI - ball_angle;
+      collision = true;
+    } else if (
+      y_diff <= this.hheight && //within left and right of brick
+      x_diff <= ball.radius + this.hwidth //above top or bottom border of brick
+      // ball_center[1] < brick_center[1] //the ball is below the brick not necessary
+    ) {
+      ball_angle = Math.PI - ball_angle;
+      collision = true;
     }
+
+    if (collision) {
+      this.health = this.health - 1;
+      if (this.health == 0) {
+        return true;
+      }
+    }
+
+    return false;
   }
 }
 
@@ -503,7 +522,7 @@ export class BrickBreaker extends Scene {
     ]; //Default Lighting for project
 
     // Draw Cube Grid 10 x 10 (use function to set size this is temp)
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < this.grid.length; i++) {
       this.shapes.bricks.draw(
         context,
         program_state,
@@ -566,7 +585,11 @@ export class BrickBreaker extends Scene {
       console.log(this.shapes.ball.getCenter());
       // Check for collision here with every box
       for (let i = 0; i < this.grid.length; i++) {
-        this.grid[i].checkCollision(this.shapes.ball);
+        let remove_brick = this.grid[i].checkCollision(this.shapes.ball);
+        if (remove_brick) {
+          this.grid.splice(i, 1);
+          i--;
+        }
       }
 
       this.shapes.ball.ball_transform = Mat4.translation(
