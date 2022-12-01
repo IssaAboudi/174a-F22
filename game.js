@@ -182,9 +182,47 @@ class Brick extends Cube {
     this.brick_transform = this.brick_transform
       .times(Mat4.scale(3, 1, 1))
       .times(Mat4.translation(3, 0, 0));
+    //half height to get distance from center to top and bottom
+    this.hheight = 1;
+    //half width to get distance from center to left and right
+    this.hwidth = 3;
   }
   getTransform() {
     return this.brick_transform;
+  }
+  // get center of brick (cannot set in constructor as it changes)
+  getCenter() {
+    return this.brick_transform.times(vec4(0, 0, 0, 1));
+  }
+  // get vertices making rectangle around cube oriented counter
+  // clockwise and starting at bottom left vertex
+  // getCenteredVertices() {
+  //   return [
+  //     this.brick_transform.times(vec4(-1, -1, 0, 0)),
+  //     this.brick_transform.times(vec4(1, -1, 0, 0)),
+  //     this.brick_transform.times(vec4(1, 1, 0, 0)),
+  //     this.brick_transform.times(vec4(-1, 1, 0, 0)),
+  //   ];
+  // }
+
+  checkCollision(ball) {
+    let brick_center = this.getCenter();
+    let ball_center = ball.getCenter();
+    let x_diff = Math.abs(ball_center[0] - brick_center[0]);
+    let y_diff = Math.abs(ball_center[1] - brick_center[1]);
+    // console.log(center);
+    // console.log(x_diff);
+    // console.log(y_diff);
+
+    // collision from below:
+    // center of sphere is within R + height of square/2
+    if (
+      x_diff <= this.hwidth && //within left and right of brick
+      y_diff <= ball.radius + this.hheight && //above top or bottom border of brick
+      ball_center[1] < brick_center[1] //the ball is below the brick
+    ) {
+      ball_angle = 2 * Math.PI - ball_angle;
+    }
   }
 }
 
@@ -203,11 +241,14 @@ class Ball extends Subdivision_Sphere {
       Mat4.translation(1 * 6.2 + 4 * 6.4, 1 + 4, 14)
     );
 
-    this.ball_position = new Vector3(
-      this.ball_transform[0][3],
-      this.ball_transform[1][3],
-      this.ball_transform[2][3]
-    );
+    // this.ball_position = new Vector3(
+    //   this.ball_transform[0][3],
+    //   this.ball_transform[1][3],
+    //   this.ball_transform[2][3]
+    // );
+  }
+  getCenter() {
+    return this.ball_transform.times(vec4(0, 0, 0, 1));
   }
 }
 
@@ -493,7 +534,7 @@ export class BrickBreaker extends Scene {
     );
 
     // Draw ball
-    let ball = new Ball();
+    // let ball = new Ball();
     // console.log(ball.ball_transform);
     // console.log("x component at [0, 3] = " + ball.ball_transform[0][3]);
     // console.log("y component at [1, 3] = " + ball.ball_transform[1][3]);
@@ -505,7 +546,7 @@ export class BrickBreaker extends Scene {
       this.shapes.ball.draw(
         context,
         program_state,
-        ball.ball_transform,
+        this.shapes.ball.ball_transform,
         this.materials.default
       );
     }
@@ -522,11 +563,18 @@ export class BrickBreaker extends Scene {
     } else {
       // move ball at ball angle
       // on collision update velocity vector and translation matrix
+      console.log(this.shapes.ball.getCenter());
+      // Check for collision here with every box
+      for (let i = 0; i < this.grid.length; i++) {
+        this.grid[i].checkCollision(this.shapes.ball);
+      }
+
       this.shapes.ball.ball_transform = Mat4.translation(
         -Math.cos(ball_angle) * speed_factor,
         Math.sin(ball_angle) * speed_factor,
         0
       ).times(this.shapes.ball.ball_transform);
+
       this.shapes.ball.draw(
         context,
         program_state,
