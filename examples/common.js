@@ -157,7 +157,7 @@ const Cube = defs.Cube =
     }
 
 
-const Subdivision_Sphere = defs.Subdivision_Sphere =
+export const Subdivision_Sphere = defs.Subdivision_Sphere =
     class Subdivision_Sphere extends Shape {
         // **Subdivision_Sphere** defines a Sphere surface, with nice uniform triangles.  A subdivision surface
         // (see Wikipedia article on those) is initially simple, then builds itself into a more and more
