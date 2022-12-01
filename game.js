@@ -1,4 +1,4 @@
-import { defs, tiny } from "./examples/common.js";
+import {defs, Subdivision_Sphere, tiny} from "./examples/common.js";
 // import { Keyboard_Manager } from "./tiny-graphics.js";
 
 // Modified tiny-graphics-widgets.js common.js
@@ -23,7 +23,8 @@ const howMuchMove = 5; //how many units the paddle moves left and right each pre
 const max_range = 30; //maximum range of motion left or right from the center
 
 
-function getLevelColor(health){
+function getHealthColor(health){
+  //return color corresponding to health value of brick
   switch(health){
     case 5:
       console.log("blue");
@@ -133,6 +134,24 @@ class Brick extends Cube {
   }
 }
 
+class Ball extends Subdivision_Sphere{
+  constructor() {
+    super(4);
+
+    this.ball_velocity = new Vector(0,0);
+
+    this.radius = 1;
+
+    //add transform component
+    this.ball_transform = Mat4.identity();
+    this.ball_transform = this.ball_transform
+        .times(Mat4.translation(1 * 6.2 + 4 * 6.4, 1 + 4, 14))
+    ;
+
+    this.ball_position = new Vector3(this.ball_transform[0][3], this.ball_transform[1][3], this.ball_transform[2][3] );
+  }
+}
+
 // // Example B: Define lines
 class Axis extends Shape {
   constructor() {
@@ -236,6 +255,7 @@ export class BrickBreaker extends Scene {
       circle: new defs.Regular_2D_Polygon(1, 15),
       bricks: new Brick(),
       axis: new Axis(),
+      ball: new Ball(),
     };
 
     this.materials = {
@@ -255,13 +275,28 @@ export class BrickBreaker extends Scene {
     this.initial_camera_location = Mat4.look_at(eye_position, eye_look_at, vec3(0, 1, 0));
 
     this.grid = [];
-    this.create_level(); //initialize grid at beginning of game
+    // Initialize the grid at the beginning of the game
+    // - can choose whether we want to have a random level or predefined levels
+    // this.create_random_level();
+
+    //How to form custom level:
+    let level = [
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+        [2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+        [3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+        [3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+        [4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+        [4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+        [5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+        [5, 5, 5, 5, 5, 5, 5, 5, 5, 5]
+    ]
+    this.create_custom_level(level);
   }
 
-  create_level() {
-
-    //level is created completely randomely
-
+  create_random_level() {
+    //level is created completely randomly
     const space_margin = 2.2; //amount of spacing between each brick
 
     for (let i = 0; i < 10; i++) {
@@ -269,7 +304,7 @@ export class BrickBreaker extends Scene {
 
         let health = Math.random() * 5;
         health = health | 1; //eliminate decimals - make health an integer
-        let color = getLevelColor(health);
+        let color = getHealthColor(health);
 
         let tempBrick = new Brick(health, color);
         tempBrick.brick_transform = tempBrick.brick_transform
@@ -279,7 +314,25 @@ export class BrickBreaker extends Scene {
         this.grid.push(tempBrick);
       }
     }
+  }
 
+  create_custom_level(level){ //Supply a 2D array for the custom level layout
+    const space_margin = 2.2; //amount of spacing between each brick
+    for (let i = 0; i < 10; i++) {
+      for(let j = 0; j < 10; j++) {
+
+        let health = level[i][j];
+        // health = health | 1; //eliminate decimals - make health an integer
+        let color = getHealthColor(health);
+
+        let tempBrick = new Brick(health, color);
+        tempBrick.brick_transform = tempBrick.brick_transform
+            .times(Mat4.translation(-2.6,17,14)) //hardcoded positions for the grid
+            .times(Mat4.translation(space_margin * j, space_margin * i, 0))
+        ;
+        this.grid.push(tempBrick);
+      }
+    }
   }
 
   make_control_panel() {
@@ -309,7 +362,7 @@ export class BrickBreaker extends Scene {
 
     program_state.lights = [new Light(vec4(0, 0, 20, 1), color(1, 1, 1, 1), 10 ** 10),]; //Default Lighting for project
 
-    // Draw Cube Grid 10x 10 (use function to set size this is temp)
+    // Draw Cube Grid 10 x 10 (use function to set size this is temp)
     for(let i = 0; i < 100; i++){
         this.shapes.bricks.draw(context, program_state, this.grid[i].brick_transform, this.materials.plastic.override({color: this.grid[i].color}));
     }
@@ -317,22 +370,28 @@ export class BrickBreaker extends Scene {
     // Draw paddle (centered it, but use variables to keep it always centered depending on grid pramaeters)
     // (use a deformed sphere so that the ball goes off at different angles)
       // ~ Changes 11/10/2022 by Issa: Changed name from plate_transform to paddle_transform (more descriptive)
-    let paddle_start_pos = (1 * 6.2) + (4 * 6.4) //aka 30.6 (constant operation)
+      // ~ Changes 11/30/2022 by Issa: Changed name from paddle_start_pos to paddle_start_Xpos (more specific)
+      //                             - Started paddle Z at 14 to match bricks and ball pos
+      //                             - Changed dimensions of paddle to be thinner on y and moved it up on y
+    let paddle_start_Xpos = (1 * 6.2) + (4 * 6.4) //aka 30.6 (constant operation)
 
     let paddle_transform = Mat4.identity();
-    paddle_transform = paddle_transform.times(Mat4.translation(paddle_start_pos, 0, 0))
+    paddle_transform = paddle_transform
+        .times(Mat4.translation(paddle_start_Xpos, 3, 14)) //
         .times(Mat4.translation(paddle_move, 0, 0)) //handles movement with a and d keys (movement amount per press is found at "howMuchMove")
-        .times(Mat4.scale(6.2, 2, 1))
+        .times(Mat4.scale(6.2, 1, 1))
     ;
 
     this.shapes.sphere.draw(context, program_state, paddle_transform, this.materials.plastic);
 
-    // Draw ball
-    let ball_transform = Mat4.identity();
-    ball_transform = Mat4.translation(1 * 6.2 + 4 * 6.4, 1 + 2, 0)
-        .times(ball_transform);
 
-    this.shapes.sphere.draw(context, program_state, ball_transform, this.materials.default);
+    // Draw ball
+    let ball = new Ball();
+    console.log(ball.ball_transform);
+    console.log("x component at [0, 3] = " + ball.ball_transform[0][3]);
+    console.log("y component at [1, 3] = " + ball.ball_transform[1][3]);
+    console.log("z component at [2, 3] = " + ball.ball_transform[2][3]);
+    this.shapes.ball.draw(context, program_state, ball.ball_transform, this.materials.default);
   }
 }
 
