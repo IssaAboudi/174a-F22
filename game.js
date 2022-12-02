@@ -31,6 +31,9 @@ const yellow = "fff308"; // Health 3
 const orange = "ffa500"; // Health 2
 const red = "ff0000"; // Health 1
 const grey = "808080"; //paddle unbreakable
+const purple = "bf40bf";
+const violet = "CF9FFF";
+const darkpurple = "301934";
 
 // Variable to say ball is till, and second variable to say ball
 // is currently moving
@@ -44,7 +47,7 @@ let speed_factor = 0.1;
 // - these are for making the game feel good
 let paddle_move = 0;
 const howMuchMove = 4; //how many units the paddle moves left and right each press
-const max_range = 30; //maximum range of motion left or right from the center
+const max_range = 27; //maximum range of motion left or right from the center
 
 function getHealthColor(health) {
   //return color corresponding to health value of brick
@@ -287,6 +290,58 @@ class Paddle extends Cube {
   }
 }
 
+class Wall extends Cube {
+  constructor(color = hex_color(darkpurple)) {
+    super("position", "normal");
+    this.color = color;
+    this.wall_transform = Mat4.translation(-42, 20, 0).times(
+      Mat4.scale(40, 20, 20000).times(Mat4.identity())
+    );
+    // this.wall_transform = this.wall_transform
+    //   .times(Mat4.scale(3, 2, 1))
+    //   .times(Mat4.translation(0.4, -7, 0));
+    // this.space_margin = 2.2;
+    // this.wall_transform = this.wall_transform.times(
+    //   Mat4.translation(-2.6, 17, 14)
+    // );
+
+    //half height to get distance from center to top and bottom
+    this.hheight = 20;
+    //half width to get distance from center to left and right
+    this.hwidth = 40;
+  }
+  getTransform() {
+    return this.wall_transform;
+  }
+  // get center of brick (cannot set in constructor as it changes)
+  getCenter() {
+    return this.wall_transform.times(vec4(0, 0, 0, 1));
+  }
+
+  checkCollision(ball) {
+    let wall_center = this.getCenter();
+    let ball_center = ball.getCenter();
+    let x_diff = Math.abs(ball_center[0] - wall_center[0]);
+    let y_diff = Math.abs(ball_center[1] - wall_center[1]);
+
+    // collision from below:
+    // center of sphere is within R + height of square/2
+    if (
+      x_diff <= this.hwidth && //within left and right of brick
+      y_diff <= ball.radius + this.hheight //above top or bottom border of brick
+      // ball_center[1] < brick_center[1] //the ball is below the brick not necessary
+    ) {
+      ball_angle = 2 * Math.PI - ball_angle;
+    } else if (
+      y_diff <= this.hheight && //within left and right of brick
+      x_diff <= ball.radius + this.hwidth //above top or bottom border of brick
+      // ball_center[1] < brick_center[1] //the ball is below the brick not necessary
+    ) {
+      ball_angle = Math.PI - ball_angle;
+    }
+  }
+}
+
 class Ball extends Subdivision_Sphere {
   constructor() {
     super(4);
@@ -440,6 +495,9 @@ export class BrickBreaker extends Scene {
       paddle: new Paddle(),
       axis: new Axis(),
       ball: new Ball(),
+      lWall: new Wall(),
+      rWall: new Wall(),
+      tWall: new Wall(),
     };
 
     this.materials = {
@@ -488,6 +546,15 @@ export class BrickBreaker extends Scene {
     this.create_custom_level(level);
     // this.paddle = new Brick(1, hex_color("ffffff"));
     // this.shapes.paddle.setPaddle();
+
+    //fix wall transforms
+    this.shapes.rWall.wall_transform = Mat4.translation(147, 0, 0).times(
+      this.shapes.rWall.wall_transform
+    );
+
+    this.shapes.tWall.wall_transform = Mat4.translation(73.5, 38, 0).times(
+      this.shapes.tWall.wall_transform
+    );
   }
 
   create_random_level() {
@@ -596,6 +663,29 @@ export class BrickBreaker extends Scene {
       this.materials.plastic.override({ color: this.shapes.paddle.color })
     );
 
+    //Draw walls
+    // left wall
+    this.shapes.lWall.draw(
+      context,
+      program_state,
+      this.shapes.lWall.wall_transform,
+      this.materials.plastic.override({ color: this.shapes.lWall.color })
+    );
+    //right wall
+    this.shapes.rWall.draw(
+      context,
+      program_state,
+      this.shapes.rWall.wall_transform,
+      this.materials.plastic.override({ color: this.shapes.rWall.color })
+    );
+    //top wall
+    this.shapes.tWall.draw(
+      context,
+      program_state,
+      this.shapes.tWall.wall_transform,
+      this.materials.plastic.override({ color: this.shapes.tWall.color })
+    );
+
     // initial game situation
     if (launch == false && moving == false) {
       // this.shapes.ball = new Ball();
@@ -629,6 +719,8 @@ export class BrickBreaker extends Scene {
         }
       }
       this.shapes.paddle.checkCollision(this.shapes.ball);
+      this.shapes.lWall.checkCollision(this.shapes.ball);
+      this.shapes.rWall.checkCollision(this.shapes.ball);
 
       this.shapes.ball.ball_transform = Mat4.translation(
         -Math.cos(ball_angle) * speed_factor,
