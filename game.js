@@ -176,6 +176,7 @@ class Brick extends Cube {
     //color is initialized to white
     // - color of brick will correspond with health
     this.color = color;
+    this.paddle = false;
 
     //add transform component:
     this.brick_transform = Mat4.identity();
@@ -187,6 +188,10 @@ class Brick extends Cube {
     //half width to get distance from center to left and right
     this.hwidth = 3;
   }
+  setPaddle() {
+    this.paddle = true;
+    this.hwidth = 6.2;
+  }
   getTransform() {
     return this.brick_transform;
   }
@@ -194,16 +199,6 @@ class Brick extends Cube {
   getCenter() {
     return this.brick_transform.times(vec4(0, 0, 0, 1));
   }
-  // get vertices making rectangle around cube oriented counter
-  // clockwise and starting at bottom left vertex
-  // getCenteredVertices() {
-  //   return [
-  //     this.brick_transform.times(vec4(-1, -1, 0, 0)),
-  //     this.brick_transform.times(vec4(1, -1, 0, 0)),
-  //     this.brick_transform.times(vec4(1, 1, 0, 0)),
-  //     this.brick_transform.times(vec4(-1, 1, 0, 0)),
-  //   ];
-  // }
 
   // returns true if brick died
   checkCollision(ball) {
@@ -212,9 +207,6 @@ class Brick extends Cube {
     let x_diff = Math.abs(ball_center[0] - brick_center[0]);
     let y_diff = Math.abs(ball_center[1] - brick_center[1]);
     let collision = false;
-    // console.log(center);
-    // console.log(x_diff);
-    // console.log(y_diff);
 
     // collision from below:
     // center of sphere is within R + height of square/2
@@ -234,7 +226,7 @@ class Brick extends Cube {
       collision = true;
     }
 
-    if (collision) {
+    if (collision == true && this.paddle == false) {
       this.health = this.health - 1;
       if (this.health == 0) {
         return true;
@@ -257,7 +249,7 @@ class Ball extends Subdivision_Sphere {
     this.ball_transform = Mat4.identity();
     //Initially placing ball on pad
     this.ball_transform = this.ball_transform.times(
-      Mat4.translation(1 * 6.2 + 4 * 6.4, 1 + 4, 14)
+      Mat4.translation(1 * 6.2 + 4 * 6.4, 1 + 4 + 0.1, 14)
     );
 
     // this.ball_position = new Vector3(
@@ -395,13 +387,14 @@ export class BrickBreaker extends Scene {
       sphere: new defs.Subdivision_Sphere(4),
       circle: new defs.Regular_2D_Polygon(1, 15),
       bricks: new Brick(),
+      paddle: new Brick(1, hex_color("#808080")),
       axis: new Axis(),
       ball: new Ball(),
     };
 
     this.materials = {
       default: new Material(new defs.Phong_Shader(), {
-        ambient: 0.4,
+        ambient: 0.7,
         diffusivity: 0.6,
         color: hex_color("#ffffff"),
       }),
@@ -443,6 +436,8 @@ export class BrickBreaker extends Scene {
       [5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
     ];
     this.create_custom_level(level);
+    // this.paddle = new Brick(1, hex_color("ffffff"));
+    this.shapes.paddle.setPaddle();
   }
 
   create_random_level() {
@@ -544,20 +539,14 @@ export class BrickBreaker extends Scene {
       .times(Mat4.translation(paddle_start_Xpos, 3, 14)) //
       .times(Mat4.translation(paddle_move, 0, 0)) //handles movement with a and d keys (movement amount per press is found at "howMuchMove")
       .times(Mat4.scale(6.2, 1, 1));
+    this.shapes.paddle.brick_transform = paddle_transform;
 
-    this.shapes.sphere.draw(
+    this.shapes.paddle.draw(
       context,
       program_state,
-      paddle_transform,
-      this.materials.plastic
+      this.shapes.paddle.brick_transform,
+      this.materials.plastic.override({ color: this.shapes.paddle.color })
     );
-
-    // Draw ball
-    // let ball = new Ball();
-    // console.log(ball.ball_transform);
-    // console.log("x component at [0, 3] = " + ball.ball_transform[0][3]);
-    // console.log("y component at [1, 3] = " + ball.ball_transform[1][3]);
-    // console.log("z component at [2, 3] = " + ball.ball_transform[2][3]);
 
     // initial game situation
     if (launch == false && moving == false) {
@@ -591,6 +580,7 @@ export class BrickBreaker extends Scene {
           i--;
         }
       }
+      this.shapes.paddle.checkCollision(this.shapes.ball);
 
       this.shapes.ball.ball_transform = Mat4.translation(
         -Math.cos(ball_angle) * speed_factor,
