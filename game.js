@@ -658,7 +658,7 @@ export class BrickBreaker extends Scene {
     const dt = program_state.animation_delta_time / 1000; //time difference between current and last frame (keep game frame independent)
 
     program_state.lights = [
-      new Light(vec4(0, 0, 20, 1), color(1, 1, 1, 1), 10 ** 10),
+      new Light(vec4(30, 40, 500, 1), color(1, 1, 1, 1), 10),
     ]; //Default Lighting for project
 
     if (lives == 0) {
@@ -667,6 +667,8 @@ export class BrickBreaker extends Scene {
     }
     // Draw Cube Grid 10 x 10 (use function to set size this is temp)
     for (let i = 0; i < this.grid.length; i++) {
+      this.grid[i].color = getHealthColor(this.grid[i].health);
+
       this.shapes.bricks.draw(
           context,
           program_state,
