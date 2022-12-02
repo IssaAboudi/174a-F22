@@ -42,6 +42,7 @@ let ball_angle = Math.PI / 2;
 let moving = false;
 // let ball_time = 0;
 let speed_factor = 0.3;
+let lives = 3;
 
 //Game Design Settings
 // - these are for making the game feel good
@@ -295,7 +296,7 @@ class Wall extends Cube {
     super("position", "normal");
     this.color = color;
     this.wall_transform = Mat4.translation(-42, 20, 0).times(
-      Mat4.scale(40, 20, 20000).times(Mat4.identity())
+      Mat4.scale(40, 20, 200).times(Mat4.identity())
     );
     // this.wall_transform = this.wall_transform
     //   .times(Mat4.scale(3, 2, 1))
@@ -430,7 +431,7 @@ const Game_Controls = (defs.Game_Controls = class Game_Controls extends Scene {
   make_control_panel() {
     //Make all the buttons for in the control panel here:
     this.key_triggered_button("Launch Ball", ["s"], () => {
-      launch = !launch;
+      launch = true;
     });
     //Handle Left and Right Inputs
     this.key_triggered_button(
@@ -498,6 +499,7 @@ export class BrickBreaker extends Scene {
       lWall: new Wall(),
       rWall: new Wall(),
       tWall: new Wall(),
+      bWall: new Wall(),
     };
 
     this.materials = {
@@ -554,6 +556,9 @@ export class BrickBreaker extends Scene {
 
     this.shapes.tWall.wall_transform = Mat4.translation(73.5, 38, 0).times(
       this.shapes.tWall.wall_transform
+    );
+    this.shapes.bWall.wall_transform = Mat4.translation(73.5, 0, -187).times(
+      this.shapes.bWall.wall_transform
     );
   }
 
@@ -689,6 +694,14 @@ export class BrickBreaker extends Scene {
       this.materials.plastic.override({ color: this.shapes.tWall.color })
     );
 
+    //back wall
+    this.shapes.bWall.draw(
+      context,
+      program_state,
+      this.shapes.bWall.wall_transform,
+      this.materials.plastic.override({ color: this.shapes.bWall.color })
+    );
+
     // initial game situation
     if (launch == false && moving == false) {
       // this.shapes.ball = new Ball();
@@ -699,11 +712,11 @@ export class BrickBreaker extends Scene {
         this.materials.default
       );
     }
-    // if user clicked launch while ball was moving go back to same spot
-    else if (launch == false && moving == true) {
-      this.shapes.ball = new Ball();
-      moving = false;
-    }
+    // // if user clicked launch while ball was moving go back to same spot
+    // else if (launch == false && moving == true) {
+    //   this.shapes.ball = new Ball();
+    //   moving = false;
+    // }
     // *START* moving the ball (launch is true here)
     else if (launch == true && moving == false) {
       moving = true;
@@ -712,7 +725,7 @@ export class BrickBreaker extends Scene {
     } else {
       // move ball at ball angle
       // on collision update velocity vector and translation matrix
-      console.log(this.shapes.ball.getCenter());
+      // console.log(this.shapes.ball.getCenter());
       // Check for collision here with every box
       for (let i = 0; i < this.grid.length; i++) {
         let remove_brick = this.grid[i].checkCollision(this.shapes.ball);
@@ -724,6 +737,7 @@ export class BrickBreaker extends Scene {
       this.shapes.paddle.checkCollision(this.shapes.ball);
       this.shapes.lWall.checkCollision(this.shapes.ball);
       this.shapes.rWall.checkCollision(this.shapes.ball);
+      this.shapes.tWall.checkCollision(this.shapes.ball);
 
       this.shapes.ball.ball_transform = Mat4.translation(
         -Math.cos(ball_angle) * speed_factor,
@@ -737,6 +751,17 @@ export class BrickBreaker extends Scene {
         this.shapes.ball.ball_transform,
         this.materials.default
       );
+    }
+
+    //check if ball is out of bounds and lost
+    let ball_center = this.shapes.ball.getCenter();
+    let paddle_center = this.shapes.paddle.getCenter();
+    if (ball_center[1] + 10 < paddle_center[1]) {
+      launch = false;
+      moving = false;
+      this.shapes.ball = new Ball();
+      lives = lives - 1;
+      paddle_move = 0;
     }
   }
 }
