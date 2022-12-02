@@ -41,7 +41,7 @@ let launch = false;
 let ball_angle = Math.PI / 2;
 let moving = false;
 // let ball_time = 0;
-let speed_factor = 0.1;
+let speed_factor = 0.3;
 
 //Game Design Settings
 // - these are for making the game feel good
@@ -516,7 +516,7 @@ export class BrickBreaker extends Scene {
 
     this.white = new Material(new defs.Basic_Shader());
 
-    let eye_position = vec3(31, 20, 60); //Initialize Camera to
+    let eye_position = vec3(31, 20, 70); //Initialize Camera to
     let eye_look_at = vec3(31, 20, 0); //Set camera to look at the middle of the game window
 
     this.initial_camera_location = Mat4.look_at(
@@ -589,6 +589,9 @@ export class BrickBreaker extends Scene {
         tempBrick.brick_transform = tempBrick.brick_transform
           .times(Mat4.translation(-2.6, 17, 14)) //hardcoded positions for the grid
           .times(Mat4.translation(space_margin * j, space_margin * i, 0));
+        // tempBrick.brick_transform = Mat4.translation(0, 0, -100).times(
+        //   tempBrick.brick_transform
+        // );
         this.grid.push(tempBrick);
       }
     }
