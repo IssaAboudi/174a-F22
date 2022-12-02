@@ -30,6 +30,7 @@ const green = "00c91b"; // Health 4
 const yellow = "fff308"; // Health 3
 const orange = "ffa500"; // Health 2
 const red = "ff0000"; // Health 1
+const grey = "808080"; //paddle unbreakable
 
 // Variable to say ball is till, and second variable to say ball
 // is currently moving
@@ -42,7 +43,7 @@ let speed_factor = 0.1;
 //Game Design Settings
 // - these are for making the game feel good
 let paddle_move = 0;
-const howMuchMove = 5; //how many units the paddle moves left and right each press
+const howMuchMove = 4; //how many units the paddle moves left and right each press
 const max_range = 30; //maximum range of motion left or right from the center
 
 function getHealthColor(health) {
@@ -176,7 +177,6 @@ class Brick extends Cube {
     //color is initialized to white
     // - color of brick will correspond with health
     this.color = color;
-    this.paddle = false;
 
     //add transform component:
     this.brick_transform = Mat4.identity();
@@ -187,10 +187,6 @@ class Brick extends Cube {
     this.hheight = 1;
     //half width to get distance from center to left and right
     this.hwidth = 3;
-  }
-  setPaddle() {
-    this.paddle = true;
-    this.hwidth = 6.2;
   }
   getTransform() {
     return this.brick_transform;
@@ -226,7 +222,8 @@ class Brick extends Cube {
       collision = true;
     }
 
-    if (collision == true && this.paddle == false) {
+    // decrement health if not a paddle and collision takes place
+    if (collision == true) {
       this.health = this.health - 1;
       if (this.health == 0) {
         return true;
@@ -234,6 +231,59 @@ class Brick extends Cube {
     }
 
     return false;
+  }
+}
+
+class Paddle extends Cube {
+  constructor(color = hex_color(grey)) {
+    super("position", "normal");
+    this.color = color;
+    this.paddle_start_Xpos = 1 * 6.2 + 4 * 6.4; //aka 30.6 (constant operation)
+    this.paddle_transform = Mat4.identity();
+    this.paddle_transform = this.paddle_transform
+      .times(Mat4.translation(this.paddle_start_Xpos, 3, 14)) //
+      .times(Mat4.translation(paddle_move, 0, 0)) //handles movement with a and d keys (movement amount per press is found at "howMuchMove")
+      .times(Mat4.scale(6.2, 1, 1));
+    //half height to get distance from center to top and bottom
+    this.hheight = 1;
+    //half width to get distance from center to left and right
+    this.hwidth = 6.2;
+  }
+
+  getTransform() {
+    return this.paddle_transform;
+  }
+  // get center of brick (cannot set in constructor as it changes)
+  getCenter() {
+    return this.paddle_transform.times(vec4(0, 0, 0, 1));
+  }
+
+  // returns true if brick died
+  checkCollision(ball) {
+    let paddle_center = this.getCenter();
+    let ball_center = ball.getCenter();
+    let x_diff = Math.abs(ball_center[0] - paddle_center[0]);
+    let y_diff = Math.abs(ball_center[1] - paddle_center[1]);
+    let collision = false;
+
+    // collision from below:
+    // center of sphere is within R + height of square/2
+    if (
+      x_diff <= this.hwidth && //within left and right of brick
+      y_diff <= ball.radius + this.hheight //above top or bottom border of brick
+      // ball_center[1] < brick_center[1] //the ball is below the brick not necessary
+    ) {
+      // ball_angle = 2 * Math.PI - ball_angle;
+      ball_angle =
+        Math.PI / 2 +
+        Math.atan((ball_center[0] - paddle_center[0]) / this.hheight);
+    } else if (
+      y_diff <= this.hheight && //within left and right of brick
+      x_diff <= ball.radius + this.hwidth //above top or bottom border of brick
+      // ball_center[1] < brick_center[1] //the ball is below the brick not necessary
+    ) {
+      ball_angle = Math.PI - ball_angle;
+    }
   }
 }
 
@@ -387,7 +437,7 @@ export class BrickBreaker extends Scene {
       sphere: new defs.Subdivision_Sphere(4),
       circle: new defs.Regular_2D_Polygon(1, 15),
       bricks: new Brick(),
-      paddle: new Brick(1, hex_color("#808080")),
+      paddle: new Paddle(),
       axis: new Axis(),
       ball: new Ball(),
     };
@@ -437,7 +487,7 @@ export class BrickBreaker extends Scene {
     ];
     this.create_custom_level(level);
     // this.paddle = new Brick(1, hex_color("ffffff"));
-    this.shapes.paddle.setPaddle();
+    // this.shapes.paddle.setPaddle();
   }
 
   create_random_level() {
@@ -532,19 +582,17 @@ export class BrickBreaker extends Scene {
     // ~ Changes 11/30/2022 by Issa: Changed name from paddle_start_pos to paddle_start_Xpos (more specific)
     //                             - Started paddle Z at 14 to match bricks and ball pos
     //                             - Changed dimensions of paddle to be thinner on y and moved it up on y
-    let paddle_start_Xpos = 1 * 6.2 + 4 * 6.4; //aka 30.6 (constant operation)
 
-    let paddle_transform = Mat4.identity();
-    paddle_transform = paddle_transform
-      .times(Mat4.translation(paddle_start_Xpos, 3, 14)) //
+    // Update location of Paddle
+    this.shapes.paddle.paddle_transform = Mat4.identity()
+      .times(Mat4.translation(this.shapes.paddle.paddle_start_Xpos, 3, 14)) //
       .times(Mat4.translation(paddle_move, 0, 0)) //handles movement with a and d keys (movement amount per press is found at "howMuchMove")
       .times(Mat4.scale(6.2, 1, 1));
-    this.shapes.paddle.brick_transform = paddle_transform;
 
     this.shapes.paddle.draw(
       context,
       program_state,
-      this.shapes.paddle.brick_transform,
+      this.shapes.paddle.paddle_transform,
       this.materials.plastic.override({ color: this.shapes.paddle.color })
     );
 
