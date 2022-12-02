@@ -719,7 +719,7 @@ const Phong_Shader = defs.Phong_Shader =
     }
 
 
-const Textured_Phong = defs.Textured_Phong =
+export const Textured_Phong = defs.Textured_Phong =
     class Textured_Phong extends Phong_Shader {
         // **Textured_Phong** is a Phong Shader extended to addditionally decal a
         // texture image over the drawn shape, lined up according to the texture
