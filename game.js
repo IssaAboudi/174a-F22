@@ -476,6 +476,8 @@ const Game_Controls = (defs.Game_Controls = class Game_Controls extends Scene {
         () => {
           if (gameOver) {
             lives = 3;
+            launch = false;
+            moving = false;
           }
         },
         undefined,
@@ -791,7 +793,6 @@ export class BrickBreaker extends Scene {
       }
     } else {
       gameOver = true;
-      Game_Controls.live_string(box => box.innerHTML = " <h1> Game Over, press m to restart game </h1>");
     }
   }
 }
