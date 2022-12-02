@@ -431,7 +431,11 @@ const Game_Controls = (defs.Game_Controls = class Game_Controls extends Scene {
   make_control_panel() {
     //Make all the buttons for in the control panel here:
     this.key_triggered_button("Launch Ball", ["s"], () => {
-      launch = true;
+      if (lives > 0) {
+        launch = true;
+      } else {
+        launch = false;
+      }
     });
     //Handle Left and Right Inputs
     this.key_triggered_button(
@@ -533,7 +537,7 @@ export class BrickBreaker extends Scene {
     // this.create_random_level();
 
     //How to form custom level:
-    let level = [
+    this.level = [
       [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
       [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
       [2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
@@ -545,7 +549,7 @@ export class BrickBreaker extends Scene {
       [5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
       [5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
     ];
-    this.create_custom_level(level);
+    this.create_custom_level(this.level);
     // this.paddle = new Brick(1, hex_color("ffffff"));
     // this.shapes.paddle.setPaddle();
 
@@ -641,6 +645,10 @@ export class BrickBreaker extends Scene {
       new Light(vec4(0, 0, 20, 1), color(1, 1, 1, 1), 10 ** 10),
     ]; //Default Lighting for project
 
+    if (lives == 0) {
+      this.grid = [];
+      this.create_custom_level(this.level);
+    }
     // Draw Cube Grid 10 x 10 (use function to set size this is temp)
     for (let i = 0; i < this.grid.length; i++) {
       this.shapes.bricks.draw(
