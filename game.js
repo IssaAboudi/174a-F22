@@ -539,7 +539,7 @@ export class BrickBreaker extends Scene {
 
     this.white = new Material(new defs.Basic_Shader());
 
-    let eye_position = vec3(31, 20, 70); //Initialize Camera to
+    let eye_position = vec3(31, 20, 60); //Initialize Camera to
     let eye_look_at = vec3(31, 20, 0); //Set camera to look at the middle of the game window
 
     this.initial_camera_location = Mat4.look_at(
