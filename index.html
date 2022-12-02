@@ -63,12 +63,21 @@
             cursor: pointer;
         }
     </style>
-
 </head>
 <body style="background: White">
 <!-- Begin typing your web page here. -->
 <!-- The following code embeds a WebGL canvas panel, loads certain scene(s), and displays panel(s) of their controls.-->
-<div class="canvas-widget" id="main-canvas"></div>
+
+<div class="canvas-widget" id="main-canvas">
+    <span class="score" id="score">Score:</span>
+    <span class="lives" id="lives">Lives:</span>
+
+<!-- <span style="
+    position: absolute;
+    color: white;
+    padding: 21px;
+">Score:</span> -->
+</div>
 <script type=module>
     // ********************* THE ENTRY POINT OF YOUR WHOLE PROGRAM STARTS HERE *********************
     // Indicate which element on the page you want the Canvas_Widget to replace with a 3D WebGL area:
@@ -79,14 +88,14 @@
     // This line creates your scene.
     new Canvas_Widget(element_to_replace, scenes);
 </script>
-    
-<!-- Game Over Module -->
+
+<!-- Game Over Modal -->
 <div id="gameover-modal" class="modal">
     <div class="modal-content">
         <span class="close">&times;</span>
         <p>Game Over</p>
     </div>
-</div>    
+</div>
 
 </body>
 </html>
