@@ -47,12 +47,28 @@ let ball_angle = Math.PI / 2; //
 let lives = 3; //player lives
 let gameOver = false;
 
+let totalScore = 0;
+let closeSpan = document.getElementsByClassName("close")[0];
+var gameoverModal = document.getElementById("gameover-modal");
+document.getElementById('lives').innerHTML = 'Lives: ' + lives;
+document.getElementById('score').innerHTML = 'Score: ' + totalScore;
+
 //Game Design Settings
 // - these are for making the game feel good
 let paddle_move = 0; //position of paddle from center (we move it left and right)
 const howMuchMove = 4; //how many units the paddle moves left and right each press
 const max_range = 27; //maximum range of motion left or right from the center
 const speed_factor = 0.3; // speed of the ball
+
+closeSpan.onclick = function() {
+  gameoverModal.style.display = "none";
+  totalScore = 0;
+  lives = 3;
+  document.getElementById('lives').innerHTML = 'Lives: ' + lives;
+  document.getElementById('score').innerHTML = 'Score: ' + totalScore;
+}
+
+
 
 function getHealthColor(health) {
   //return color corresponding to health value of brick
@@ -234,6 +250,8 @@ class Brick extends Cube {
     if (collision == true) {
       this.health = this.health - 1;
       if (this.health == 0) {
+        totalScore = totalScore + 1;
+        document.getElementById('score').innerHTML = 'Score: ' + totalScore;
         return true;
       }
     }
@@ -476,8 +494,6 @@ const Game_Controls = (defs.Game_Controls = class Game_Controls extends Scene {
         () => {
           if (gameOver) {
             lives = 3;
-            launch = false;
-            moving = false;
           }
         },
         undefined,
@@ -793,6 +809,7 @@ export class BrickBreaker extends Scene {
       }
     } else {
       gameOver = true;
+      Game_Controls.live_string(box => box.innerHTML = " <h1> Game Over, press m to restart game </h1>");
     }
   }
 }
